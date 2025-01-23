@@ -1,12 +1,14 @@
 import express from 'express';
 import multer from 'multer';
-import { register, login } from './service/auth.service.js';
+import { register, login, verify } from './service/auth.service.js';
+import { validation } from '../../utils/validation.js';
+import { loginValidationSchema, registerValidationSchema } from './auth.validation.js';
 
 const router = express.Router();
 
 const diskStorage = multer.diskStorage({
     destination: function(req, file, cb){
-        cb(null, './src/uploads');
+        cb(null, 'uploads');
     },
     filename: function(req, file, cb){
         const ext = file.mimetype.split('/')[1];
@@ -24,11 +26,11 @@ const upload = multer({storage: diskStorage, fileFilter: function(req, file, cb)
 }});
 
 
-router.route('/register')
-        .post(upload.single('image'), register);
+router.post('/register', validation(registerValidationSchema), upload.single('image'), register);
 
-router.route('/login')
-        .post(login);
+router.post('/login', validation(loginValidationSchema), login);
+
+router.get('/verify/:token', verify);
 
 
 export default router;

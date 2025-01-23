@@ -1,7 +1,7 @@
 import connection from "./DB/connection.js";
 import authRoutes from './modules/auth/auth.controller.js';
-// import messageRoutes from './modules/message/message.routes.js'; 
-// import userRoutes from './modules/user/user.routes.js';
+import userRoutes from './modules/user/user.controller.js';
+import messageRoutes from './modules/message/message.controller.js';
 
 
 
@@ -11,8 +11,8 @@ const bootstrap = (app, express) => {
     connection();
 
     app.use('/auth', authRoutes);
-    // app.use('/messages', messageRoutes);
-    // app.use('/users', userRoutes);
+    app.use('/users', userRoutes);
+    app.use('/messages', messageRoutes);
 
     app.all('*', (req, res) => {
         return res.status(404).json({ message: 'This source is not found.' });

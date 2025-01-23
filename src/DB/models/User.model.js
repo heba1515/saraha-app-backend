@@ -11,7 +11,6 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: true,
         minlength: 3,
-        trim: true, 
     },
     email: {
         type: String,
@@ -22,9 +21,6 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: true,
         minlength: 6, 
-    },
-    token: {
-        type: String,
     },
     phone: {
         type: String, 

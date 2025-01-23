@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
-import nodemailer from 'nodemailer';
 import crypto from 'crypto-js';
+import jwt from 'jsonwebtoken';
 import UserModel from '../../../DB/models/User.model.js';
 
 export const register = async (req, res) => {
@@ -29,23 +29,10 @@ export const register = async (req, res) => {
 
         await newUser.save();
 
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: process.env.EMAIL, 
-                pass: process.env.EMAIL_PASSWORD, 
-            },
-        });
+        const token = jwt.sign({email}, process.env.CONFIRMEMAIL_SECRET_KEY);
+        const url = `http://localhost:${process.env.PORT}/auth/verify/${token}`;
 
-        const mailOptions = {
-            from: process.env.EMAIL,
-            to: email,
-            subject: 'Welcome to Saraha App!',
-            text: `Hello ${name}, welcome to Saraha!`,
-        };
-
-        await transporter.sendMail(mailOptions);
-
+        sendSarahaEmail(email, url);
 
         res.status(201).json({ message: 'User registered successfully!', newUser});
     }catch(error){
@@ -65,7 +52,24 @@ export const login = async (req, res) => {
         const matchedPassword = bcrypt.compareSync(password, user.password);
         if (!matchedPassword) return res.status(401).json({ message: 'Invalid Password' });
 
-        res.status(200).json({ message: 'logged in successfully!' });
+        const token = jwt.sign({id: user._id, isLoggedIn: true}, process.env.TOKEN_SECRET_KEY, {expiresIn: '1d'})
+
+        res.status(200).json({ message: 'logged in successfully!', token });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+
+
+export const verify = async (req, res) => {
+    try {
+        const token = req.params.token;
+        const decoded = jwt.verify(token,process.env.CONFIRMEMAIL_SECRET_KEY);
+        const user = await UserModel.findOne({email: decoded.email});
+        if(!user) return res.status(404).json({ message: 'Email not found' });
+        await UserModel.findByIdAndUpdate(user._id, {confirmEmail: true}, {new: true});
+        res.status(200).json({ message: 'Updated successfully!' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
